@@ -37,6 +37,9 @@ outputs/reports/*.json
 # Streamlit
 .streamlit/secrets.toml
 
+# PyVis auto-generated library files
+lib/
+
 # OS
 .DS_Store
 Thumbs.db

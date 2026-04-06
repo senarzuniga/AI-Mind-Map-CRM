@@ -20,6 +20,9 @@ from core import ai_engine, mindmap_builder, orchestrator, presentation_builder
 from utils import memory_store
 from utils.file_loader import load_file
 
+# ─── Constants ───────────────────────────────────────────────────────────────
+TEXT_PREVIEW_LENGTH = 1000
+
 # ─── Page config ────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="AI Mind Map CRM",
@@ -250,7 +253,7 @@ def render_analysis_mode():
                     input_text = load_file(uploaded_file)
                     st.success(f"✅ Loaded {len(input_text):,} characters")
                     with st.expander("Preview text"):
-                        st.text(input_text[:1000] + ("..." if len(input_text) > 1000 else ""))
+                        st.text(input_text[:TEXT_PREVIEW_LENGTH] + ("..." if len(input_text) > TEXT_PREVIEW_LENGTH else ""))
                 except Exception as e:
                     st.error(f"Error loading file: {e}")
 

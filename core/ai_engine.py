@@ -51,7 +51,7 @@ def _call_ai(prompt: str, model: str = "gpt-4o-mini") -> dict:
     try:
         return json.loads(content)
     except json.JSONDecodeError as e:
-        raise ValueError(f"AI returned invalid JSON: {e}\nContent: {content[:500]}")
+        raise ValueError(f"AI returned invalid JSON: {e}") from e
 
 
 def structure(parsed_text: str) -> dict:

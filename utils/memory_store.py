@@ -1,16 +1,38 @@
 """CRM memory store for saving and loading company analyses."""
 import json
 import os
-from datetime import datetime
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 MEMORY_DIR = Path(__file__).parent.parent / "data" / "memory"
 
+# Strict allowlist: only word chars and hyphens (no dots, slashes, or spaces)
+_SAFE_ID_RE = re.compile(r"^[\w\-]{1,100}$")
+
 
 def _ensure_memory_dir() -> None:
     """Ensure the memory directory exists."""
     MEMORY_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _safe_path(company_id: str) -> Path:
+    """
+    Convert a user-supplied company_id into a safe filesystem path.
+
+    1. Sanitize: replace any character not in [word, hyphen] with '_'.
+    2. Validate: assert the result matches the strict allowlist regex.
+    3. Construct: join with MEMORY_DIR (no traversal possible).
+    """
+    sanitized = re.sub(r"[^\w\-]", "_", company_id.strip().lower())[:100]
+
+    # Strict allowlist check — raises ValueError if somehow not safe
+    if not _SAFE_ID_RE.match(sanitized):
+        raise ValueError(f"Invalid company_id after sanitization: {sanitized!r}")
+
+    # MEMORY_DIR is a fixed, trusted base; sanitized contains no separators
+    return MEMORY_DIR / f"{sanitized}.json"
 
 
 def save_analysis(
@@ -31,16 +53,14 @@ def save_analysis(
     record = {
         "company_id": company_id,
         "company_name": company_name,
-        "date": datetime.utcnow().isoformat(),
+        "date": datetime.now(timezone.utc).isoformat(),
         "input": input_text[:500] + "..." if len(input_text) > 500 else input_text,
         "structured_data": structured_data,
         "mindmap": mindmap,
         "insights": insights,
     }
 
-    # Use company_id as the filename (sanitized)
-    safe_id = _sanitize_id(company_id)
-    file_path = MEMORY_DIR / f"{safe_id}.json"
+    file_path = _safe_path(company_id)
 
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(record, f, indent=2, ensure_ascii=False)
@@ -54,8 +74,7 @@ def load_analysis(company_id: str) -> Optional[dict]:
 
     Returns the analysis dict, or None if not found.
     """
-    safe_id = _sanitize_id(company_id)
-    file_path = MEMORY_DIR / f"{safe_id}.json"
+    file_path = _safe_path(company_id)
 
     if not file_path.exists():
         return None
@@ -96,17 +115,9 @@ def delete_analysis(company_id: str) -> bool:
 
     Returns True if deleted, False if not found.
     """
-    safe_id = _sanitize_id(company_id)
-    file_path = MEMORY_DIR / f"{safe_id}.json"
+    file_path = _safe_path(company_id)
 
     if file_path.exists():
         file_path.unlink()
         return True
     return False
-
-
-def _sanitize_id(company_id: str) -> str:
-    """Sanitize a company ID for use as a filename."""
-    import re
-    sanitized = re.sub(r"[^\w\-]", "_", company_id.strip().lower())
-    return sanitized[:100]  # Limit length
