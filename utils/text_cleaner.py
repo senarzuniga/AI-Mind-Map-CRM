@@ -2,6 +2,12 @@
 import re
 import unicodedata
 
+# Maximum characters to keep in a cleaned text before truncation
+MAX_CLEAN_TEXT_LENGTH = 12_000
+
+# Default length for short text previews/summaries
+TEXT_SUMMARY_LENGTH = 500
+
 
 def clean_text(text: str) -> str:
     """
@@ -37,9 +43,8 @@ def clean_text(text: str) -> str:
     text = text.strip()
 
     # Truncate to ~12,000 characters to avoid token overflows
-    max_length = 12_000
-    if len(text) > max_length:
-        text = text[:max_length] + "\n\n[Content truncated for processing...]"
+    if len(text) > MAX_CLEAN_TEXT_LENGTH:
+        text = text[:MAX_CLEAN_TEXT_LENGTH] + "\n\n[Content truncated for processing...]"
 
     return text
 
@@ -69,3 +74,10 @@ def extract_keywords(text: str, max_keywords: int = 10) -> list:
     # Sort by frequency and return top keywords
     sorted_words = sorted(freq.items(), key=lambda x: x[1], reverse=True)
     return [word for word, _ in sorted_words[:max_keywords]]
+
+
+def truncate_text(text: str, max_length: int, suffix: str = "...") -> str:
+    """Return text truncated to max_length characters with optional suffix."""
+    if len(text) <= max_length:
+        return text
+    return text[:max_length] + suffix

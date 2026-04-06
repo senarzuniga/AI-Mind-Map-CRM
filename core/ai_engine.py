@@ -149,4 +149,4 @@ Analysis data:
     try:
         return json.loads(content)
     except json.JSONDecodeError as e:
-        raise ValueError(f"AI returned invalid JSON: {e}")
+        raise ValueError(f"AI returned invalid JSON: {e}") from e

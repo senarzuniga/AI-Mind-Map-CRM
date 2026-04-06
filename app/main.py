@@ -19,6 +19,7 @@ load_dotenv(ROOT / ".env")
 from core import ai_engine, mindmap_builder, orchestrator, presentation_builder
 from utils import memory_store
 from utils.file_loader import load_file
+from utils.text_cleaner import truncate_text
 
 # ─── Constants ───────────────────────────────────────────────────────────────
 TEXT_PREVIEW_LENGTH = 1000
@@ -253,7 +254,7 @@ def render_analysis_mode():
                     input_text = load_file(uploaded_file)
                     st.success(f"✅ Loaded {len(input_text):,} characters")
                     with st.expander("Preview text"):
-                        st.text(input_text[:TEXT_PREVIEW_LENGTH] + ("..." if len(input_text) > TEXT_PREVIEW_LENGTH else ""))
+                        st.text(truncate_text(input_text, TEXT_PREVIEW_LENGTH))
                 except Exception as e:
                     st.error(f"Error loading file: {e}")
 

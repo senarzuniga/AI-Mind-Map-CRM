@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from utils.text_cleaner import TEXT_SUMMARY_LENGTH, truncate_text
+
 MEMORY_DIR = Path(__file__).parent.parent / "data" / "memory"
 
 # Strict allowlist: only word chars and hyphens (no dots, slashes, or spaces)
@@ -54,7 +56,7 @@ def save_analysis(
         "company_id": company_id,
         "company_name": company_name,
         "date": datetime.now(timezone.utc).isoformat(),
-        "input": input_text[:500] + "..." if len(input_text) > 500 else input_text,
+        "input": truncate_text(input_text, TEXT_SUMMARY_LENGTH),
         "structured_data": structured_data,
         "mindmap": mindmap,
         "insights": insights,
