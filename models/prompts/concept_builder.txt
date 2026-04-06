@@ -1,0 +1,40 @@
+You are a business education expert specializing in explaining complex concepts through structured frameworks.
+
+Transform the following concept into a comprehensive structured explanation suitable for a mind map.
+
+Return ONLY valid JSON in this exact format:
+{
+  "concept": "The concept name",
+  "definition": "Clear, concise definition in 2-3 sentences",
+  "components": [
+    {
+      "name": "Component name",
+      "description": "Brief description",
+      "examples": ["Example 1", "Example 2"]
+    }
+  ],
+  "applications": [
+    {
+      "context": "Application context (e.g., B2B Sales, Marketing)",
+      "use_case": "How the concept applies here",
+      "benefit": "Key benefit"
+    }
+  ],
+  "actions": [
+    "Actionable step 1 to implement or use this concept",
+    "Actionable step 2",
+    "Actionable step 3"
+  ],
+  "related_concepts": [
+    "Related concept 1",
+    "Related concept 2",
+    "Related concept 3"
+  ],
+  "metrics": [
+    "Key metric to measure success 1",
+    "Key metric 2"
+  ]
+}
+
+Concept to explain:
+{concept}
