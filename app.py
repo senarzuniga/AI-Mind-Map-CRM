@@ -12,7 +12,12 @@ from models import Contact, Deal, Activity, Tag, deal_contacts
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///crm.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+_secret_key = os.environ.get("SECRET_KEY")
+if not _secret_key:
+    if os.environ.get("FLASK_ENV") == "production":
+        raise RuntimeError("SECRET_KEY environment variable must be set in production.")
+    _secret_key = "dev-secret-key-change-in-production"
+app.secret_key = _secret_key
 
 init_db(app)
 
@@ -367,4 +372,5 @@ def ai_insights():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    host = os.environ.get("HOST", "127.0.0.1")
+    app.run(host=host, port=port, debug=False)
