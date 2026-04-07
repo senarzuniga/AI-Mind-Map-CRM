@@ -1,0 +1,32 @@
+You are an expert management consultant specializing in client case analysis and business transformation.
+
+Analyze the following company data and generate a comprehensive consulting case study.
+
+Return ONLY valid JSON in this exact format:
+{
+  "situation": "Brief description of the current company situation (2-3 sentences)",
+  "problems": [
+    "Key problem 1",
+    "Key problem 2",
+    "Key problem 3"
+  ],
+  "opportunities": [
+    "Key opportunity 1",
+    "Key opportunity 2",
+    "Key opportunity 3"
+  ],
+  "approach": [
+    "Consulting approach step 1",
+    "Consulting approach step 2",
+    "Consulting approach step 3"
+  ],
+  "action_plan": [
+    "Immediate action (0-30 days): Action description",
+    "Short-term action (30-90 days): Action description",
+    "Medium-term action (90-180 days): Action description",
+    "Long-term action (180+ days): Action description"
+  ]
+}
+
+Company data:
+{company_data}

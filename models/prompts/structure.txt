@@ -1,0 +1,38 @@
+You are a strategic business analyst. Transform the following text into a structured hierarchical JSON mind map.
+
+The JSON must follow this exact structure:
+{
+  "title": "Main topic title",
+  "level1": [
+    {
+      "topic": "Topic name",
+      "level2": [
+        {
+          "component": "Component name",
+          "level3": [
+            {
+              "action": "Action or insight",
+              "level4": [
+                {
+                  "risk_or_metric": "Risk or metric description",
+                  "type": "risk|metric"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Return ONLY valid JSON, no explanations, no markdown code blocks
+- Level 1: Main topics (3-6 topics)
+- Level 2: Components per topic (2-4 per topic)
+- Level 3: Actions or insights per component (2-3 per component)
+- Level 4: Risks or metrics per action (1-2 per action)
+- All text must be concise (under 10 words per item)
+
+Input text:
+{input_text}
