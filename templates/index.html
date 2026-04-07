@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – AI Mind Map CRM{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon">👥</div>
+    <div class="kpi-value">{{ total_contacts }}</div>
+    <div class="kpi-label">Total Contacts</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon">💼</div>
+    <div class="kpi-value">{{ total_deals }}</div>
+    <div class="kpi-label">Total Deals</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon">📈</div>
+    <div class="kpi-value">${{ "{:,.0f}".format(pipeline_value) }}</div>
+    <div class="kpi-label">Weighted Pipeline</div>
+  </div>
+  <div class="kpi-card kpi-card--green">
+    <div class="kpi-icon">✅</div>
+    <div class="kpi-value">${{ "{:,.0f}".format(won_value) }}</div>
+    <div class="kpi-label">Revenue Won</div>
+  </div>
+</div>
+
+<!-- Pipeline & Top Contacts -->
+<div class="two-col">
+  <!-- Pipeline funnel -->
+  <div class="card">
+    <h2 class="card-title">Deal Pipeline</h2>
+    <div class="funnel">
+      {% set stage_labels = {
+        'discovery': 'Discovery',
+        'proposal': 'Proposal',
+        'negotiation': 'Negotiation',
+        'closed_won': 'Closed Won',
+        'closed_lost': 'Closed Lost'
+      } %}
+      {% for stage in ['discovery', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] %}
+      <div class="funnel-row funnel-{{ stage }}">
+        <span class="funnel-label">{{ stage_labels[stage] }}</span>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width: {{ [stage_counts[stage] * 20, 100] | min }}%"></div>
+        </div>
+        <span class="funnel-count">{{ stage_counts[stage] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Top contacts by AI score -->
+  <div class="card">
+    <h2 class="card-title">Top Contacts by AI Score</h2>
+    <ul class="score-list">
+      {% for c in top_contacts %}
+      <li class="score-item">
+        <a href="{{ url_for('contact_detail', contact_id=c.id) }}" class="score-name">{{ c.name }}</a>
+        <span class="score-company">{{ c.company or '—' }}</span>
+        <div class="score-bar-wrap">
+          <div class="score-bar" style="width: {{ c.ai_score }}%"></div>
+        </div>
+        <span class="score-val">{{ c.ai_score }}</span>
+        <span class="status-badge" style="background:{{ STATUS_COLORS[c.status] }}">{{ c.status }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<!-- AI Insights + Recent Activity -->
+<div class="two-col">
+  <!-- AI Insights -->
+  <div class="card">
+    <h2 class="card-title">🤖 AI Insights</h2>
+    <div id="ai-insights"><p class="muted">Loading insights…</p></div>
+  </div>
+
+  <!-- Recent activity feed -->
+  <div class="card">
+    <h2 class="card-title">Recent Activity</h2>
+    <ul class="activity-feed">
+      {% for a in recent_activities %}
+      <li class="activity-item">
+        <span class="activity-kind activity-{{ a.kind }}">{{ a.kind }}</span>
+        <span class="activity-desc">{{ a.description }}</span>
+        <span class="activity-time">{{ a.created_at.strftime('%b %d') }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  fetch('/api/ai-insights')
+    .then(r => r.json())
+    .then(data => {
+      const box = document.getElementById('ai-insights');
+      if (!data.insights.length) {
+        box.innerHTML = '<p class="muted">No insights available yet.</p>';
+        return;
+      }
+      box.innerHTML = data.insights.map(i =>
+        `<div class="insight-item"><span class="insight-icon">${i.icon}</span><span>${i.text}</span></div>`
+      ).join('');
+    });
+</script>
+{% endblock %}

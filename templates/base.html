@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}AI Mind Map CRM{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🧠</span>
+      <span class="logo-text">MindMap CRM</span>
+    </div>
+    <ul class="nav-list">
+      <li><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+        <span class="nav-icon">📊</span> Dashboard
+      </a></li>
+      <li><a href="{{ url_for('contacts') }}" class="nav-link {% if 'contact' in request.endpoint %}active{% endif %}">
+        <span class="nav-icon">👥</span> Contacts
+      </a></li>
+      <li><a href="{{ url_for('deals') }}" class="nav-link {% if 'deal' in request.endpoint %}active{% endif %}">
+        <span class="nav-icon">💼</span> Deals
+      </a></li>
+      <li><a href="{{ url_for('mindmap') }}" class="nav-link {% if request.endpoint == 'mindmap' %}active{% endif %}">
+        <span class="nav-icon">🗺️</span> Mind Map
+      </a></li>
+    </ul>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main-content">
+    <header class="page-header">
+      <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+      <div class="header-actions">{% block header_actions %}{% endblock %}</div>
+    </header>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="content">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

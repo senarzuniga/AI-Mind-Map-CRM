@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Deals – AI Mind Map CRM{% endblock %}
+{% block page_title %}Deals Pipeline{% endblock %}
+{% block header_actions %}
+  <a href="{{ url_for('new_deal') }}" class="btn btn-primary">+ New Deal</a>
+{% endblock %}
+
+{% block content %}
+{% set stage_labels = {
+  'discovery': 'Discovery',
+  'proposal': 'Proposal',
+  'negotiation': 'Negotiation',
+  'closed_won': 'Closed Won',
+  'closed_lost': 'Closed Lost'
+} %}
+<div class="kanban">
+  {% for stage in STAGE_ORDER %}
+  <div class="kanban-col">
+    <div class="kanban-header kanban-{{ stage }}">
+      <span>{{ stage_labels[stage] }}</span>
+      <span class="kanban-count">{{ pipeline[stage] | length }}</span>
+    </div>
+    {% for deal in pipeline[stage] %}
+    <div class="deal-card">
+      <div class="deal-title">{{ deal.title }}</div>
+      <div class="deal-value">${{ "{:,.0f}".format(deal.value) }}</div>
+      <div class="deal-meta">
+        <span class="deal-prob">{{ deal.probability }}% close</span>
+        {% if deal.close_date %}
+        <span class="deal-date">{{ deal.close_date.strftime('%b %d') }}</span>
+        {% endif %}
+      </div>
+      {% if deal.contacts %}
+      <div class="deal-contacts">
+        {% for c in deal.contacts %}
+        <a href="{{ url_for('contact_detail', contact_id=c.id) }}" class="deal-contact-link">{{ c.name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="deal-actions">
+        <a href="{{ url_for('edit_deal', deal_id=deal.id) }}" class="btn btn-xs">Edit</a>
+        <form method="post" action="{{ url_for('delete_deal', deal_id=deal.id) }}" style="display:inline"
+              onsubmit="return confirm('Delete this deal?')">
+          <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <p class="kanban-empty">—</p>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

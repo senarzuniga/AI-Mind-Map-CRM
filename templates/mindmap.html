@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Mind Map – AI Mind Map CRM{% endblock %}
+{% block page_title %}AI Mind Map{% endblock %}
+
+{% block content %}
+<div class="card mindmap-card">
+  <div class="mindmap-toolbar">
+    <button id="btn-reset" class="btn btn-secondary">⟳ Reset View</button>
+    <div class="mindmap-legend">
+      <span class="legend-item"><span class="legend-dot" style="background:#6366f1"></span> Contact</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Deal</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#10b981"></span> Tag</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#1e293b"></span> Hub</span>
+    </div>
+  </div>
+  <div id="mindmap-container"></div>
+  <div id="node-tooltip" class="node-tooltip" style="display:none"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="{{ url_for('static', filename='js/mindmap.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} – AI Mind Map CRM{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:640px">
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label">Name *</label>
+      <input type="text" name="name" class="input" required value="{{ contact.name if contact else '' }}" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Company</label>
+      <input type="text" name="company" class="input" value="{{ contact.company if contact else '' }}" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="input" value="{{ contact.email if contact else '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input type="text" name="phone" class="input" value="{{ contact.phone if contact else '' }}" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select name="status" class="input select-input">
+        {% for s in ['lead', 'prospect', 'customer', 'churned'] %}
+        <option value="{{ s }}" {% if contact and contact.status == s %}selected{% endif %}>{{ s.capitalize() }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <div class="tag-checkboxes">
+        {% for t in all_tags %}
+        <label class="tag-check">
+          <input type="checkbox" name="tags" value="{{ t.id }}"
+            {% if contact and t in contact.tags %}checked{% endif %} />
+          <span class="tag" style="background:{{ t.color }}20; color:{{ t.color }}; border-color:{{ t.color }}">{{ t.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea name="notes" class="input textarea" rows="3">{{ contact.notes if contact else '' }}</textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a href="{{ url_for('contacts') }}" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

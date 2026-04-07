@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ contact.name }} – AI Mind Map CRM{% endblock %}
+{% block page_title %}{{ contact.name }}{% endblock %}
+{% block header_actions %}
+  <a href="{{ url_for('edit_contact', contact_id=contact.id) }}" class="btn btn-secondary">Edit</a>
+  <form method="post" action="{{ url_for('delete_contact', contact_id=contact.id) }}" style="display:inline"
+        onsubmit="return confirm('Delete this contact?')">
+    <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+<div class="two-col">
+  <!-- Contact info card -->
+  <div class="card">
+    <h2 class="card-title">Contact Info</h2>
+    <dl class="detail-list">
+      <dt>Company</dt><dd>{{ contact.company or '—' }}</dd>
+      <dt>Email</dt><dd>{{ contact.email or '—' }}</dd>
+      <dt>Phone</dt><dd>{{ contact.phone or '—' }}</dd>
+      <dt>Status</dt>
+      <dd><span class="status-badge" style="background:{{ STATUS_COLORS[contact.status] }}">{{ contact.status }}</span></dd>
+      <dt>AI Score</dt>
+      <dd>
+        <div class="score-bar-wrap" style="max-width:200px">
+          <div class="score-bar" style="width:{{ contact.ai_score }}%"></div>
+        </div>
+        <strong>{{ contact.ai_score }} / 100</strong>
+      </dd>
+      <dt>Tags</dt>
+      <dd>
+        {% for t in contact.tags %}
+        <span class="tag" style="background:{{ t.color }}20; color:{{ t.color }}; border-color:{{ t.color }}">{{ t.name }}</span>
+        {% else %}—
+        {% endfor %}
+      </dd>
+      <dt>Notes</dt><dd>{{ contact.notes or '—' }}</dd>
+      <dt>Created</dt><dd>{{ contact.created_at.strftime('%b %d, %Y') }}</dd>
+    </dl>
+  </div>
+
+  <!-- Linked deals -->
+  <div class="card">
+    <h2 class="card-title">Linked Deals</h2>
+    {% if contact.deals %}
+    <ul class="score-list">
+      {% for d in contact.deals %}
+      <li class="score-item">
+        <a href="{{ url_for('edit_deal', deal_id=d.id) }}" class="score-name">{{ d.title }}</a>
+        <span class="score-company">${{ "{:,.0f}".format(d.value) }}</span>
+        <span class="status-badge stage-{{ d.stage }}">{{ d.stage.replace('_', ' ') }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No linked deals.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Activity log -->
+<div class="card">
+  <h2 class="card-title">Activity Log</h2>
+
+  <form method="post" action="{{ url_for('add_activity', contact_id=contact.id) }}" class="activity-form">
+    <select name="kind" class="input select-input">
+      {% for k in ['note', 'call', 'email', 'meeting'] %}
+      <option value="{{ k }}">{{ k.capitalize() }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="description" placeholder="What happened?" class="input" required />
+    <button type="submit" class="btn btn-primary">Log</button>
+  </form>
+
+  {% if activities %}
+  <ul class="activity-feed" style="margin-top:1rem">
+    {% for a in activities %}
+    <li class="activity-item">
+      <span class="activity-kind activity-{{ a.kind }}">{{ a.kind }}</span>
+      <span class="activity-desc">{{ a.description }}</span>
+      <span class="activity-time">{{ a.created_at.strftime('%b %d, %Y %H:%M') }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted" style="margin-top:.5rem">No activities yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

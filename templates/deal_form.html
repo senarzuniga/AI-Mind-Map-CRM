@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} – AI Mind Map CRM{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:640px">
+  <form method="post">
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" name="title" class="input" required value="{{ deal.title if deal else '' }}" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Value ($)</label>
+        <input type="number" name="value" class="input" step="0.01" min="0"
+               value="{{ deal.value if deal else 0 }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Probability (%)</label>
+        <input type="number" name="probability" class="input" min="0" max="100"
+               value="{{ deal.probability if deal else 20 }}" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Stage</label>
+        <select name="stage" class="input select-input">
+          {% set stage_labels = {
+            'discovery': 'Discovery',
+            'proposal': 'Proposal',
+            'negotiation': 'Negotiation',
+            'closed_won': 'Closed Won',
+            'closed_lost': 'Closed Lost'
+          } %}
+          {% for s in STAGE_ORDER %}
+          <option value="{{ s }}" {% if deal and deal.stage == s %}selected{% endif %}>{{ stage_labels[s] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expected Close Date</label>
+        <input type="date" name="close_date" class="input"
+               value="{{ deal.close_date.strftime('%Y-%m-%d') if deal and deal.close_date else '' }}" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Linked Contacts</label>
+      <div class="tag-checkboxes">
+        {% for c in all_contacts %}
+        <label class="tag-check">
+          <input type="checkbox" name="contacts" value="{{ c.id }}"
+            {% if deal and c in deal.contacts %}checked{% endif %} />
+          <span>{{ c.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea name="notes" class="input textarea" rows="3">{{ deal.notes if deal else '' }}</textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a href="{{ url_for('deals') }}" class="btn btn-ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
