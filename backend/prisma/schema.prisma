@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts   Contact[]
+  deals      Deal[]
+  activities Activity[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+// ─── CRM Core ─────────────────────────────────────────────────────────────────
+
+model Contact {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?  @unique
+  phone     String?
+  company   String?
+  jobTitle  String?
+  notes     String?
+  tags      String[]
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerId    String
+  owner      User       @relation(fields: [ownerId], references: [id])
+  deals      Deal[]
+  activities Activity[]
+
+  @@map("contacts")
+}
+
+model Deal {
+  id          String     @id @default(cuid())
+  title       String
+  value       Float      @default(0)
+  currency    String     @default("USD")
+  stage       DealStage  @default(LEAD)
+  probability Int        @default(0)
+  closeDate   DateTime?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  ownerId    String
+  owner      User       @relation(fields: [ownerId], references: [id])
+  contactId  String
+  contact    Contact    @relation(fields: [contactId], references: [id])
+  activities Activity[]
+
+  @@map("deals")
+}
+
+enum DealStage {
+  LEAD
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+model Activity {
+  id        String       @id @default(cuid())
+  type      ActivityType
+  subject   String
+  notes     String?
+  dueDate   DateTime?
+  done      Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  dealId    String?
+  deal      Deal?    @relation(fields: [dealId], references: [id])
+
+  @@map("activities")
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  NOTE
+}
+
+// ─── Mind Map ─────────────────────────────────────────────────────────────────
+
+model MindMap {
+  id        String   @id @default(cuid())
+  title     String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("mind_maps")
+}
