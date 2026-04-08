@@ -1,5 +1,69 @@
 """Mind Map Builder: converts structured JSON into graph nodes and edges."""
-from typing import Any
+
+# ── Semantic node styles ────────────────────────────────────────────────────
+NODE_STYLES = {
+    "root":        {"emoji": "🧠", "color": "#6D28D9"},  # purple – strategic
+    "topic":       {"emoji": "🧭", "color": "#1D4ED8"},  # blue   – information
+    "component":   {"emoji": "📊", "color": "#0E7490"},  # teal   – data
+    "action":      {"emoji": "🎯", "color": "#15803D"},  # green  – positive
+    "risk":        {"emoji": "⚠️",  "color": "#B91C1C"},  # red    – risk
+    "metric":      {"emoji": "📈", "color": "#7C3AED"},  # purple – metric
+    "insight":     {"emoji": "💡", "color": "#B45309"},  # amber  – insight
+    "opportunity": {"emoji": "🚀", "color": "#047857"},  # green  – opportunity
+    "definition":  {"emoji": "📖", "color": "#1D4ED8"},  # blue   – information
+    "applications":{"emoji": "🔧", "color": "#0E7490"},  # teal
+    "components":  {"emoji": "📦", "color": "#1D4ED8"},  # blue
+    "actions":     {"emoji": "✅", "color": "#15803D"},  # green
+}
+
+# ── Semantic edge styles by (source_level, target_level) ───────────────────
+EDGE_STYLES = {
+    (0, 1): {"type": "flow",   "label": "expands",   "emoji": "➡️"},
+    (1, 2): {"type": "impact", "label": "drives",    "emoji": "⚡"},
+    (2, 3): {"type": "action", "label": "requires",  "emoji": "🎯"},
+    (3, 4): {"type": "risk",   "label": "threatens", "emoji": "⚠️"},
+}
+DEFAULT_EDGE_STYLE = {"type": "flow", "label": "relates", "emoji": "→"}
+
+# ── Overrides when the target node type is known ────────────────────────────
+EDGE_TYPE_OVERRIDES = {
+    "risk":        {"type": "risk",    "label": "threatens", "emoji": "⚠️"},
+    "metric":      {"type": "insight", "label": "measures",  "emoji": "💡"},
+    "insight":     {"type": "insight", "label": "generates", "emoji": "💡"},
+    "opportunity": {"type": "loop",    "label": "creates",   "emoji": "🔄"},
+}
+
+
+def _enrich_node(node: dict) -> dict:
+    """Add emoji and color fields to a node dict based on its type."""
+    ntype = node.get("type", "action")
+    style = NODE_STYLES.get(ntype, {"emoji": "🔹", "color": "#374151"})
+    return {
+        **node,
+        "emoji": node.get("emoji") or style["emoji"],
+        "color": node.get("color") or style["color"],
+    }
+
+
+def _enrich_edge(edge: dict, node_level_map: dict, node_type_map: dict) -> dict:
+    """Add semantic type, label, and emoji to an edge dict."""
+    if edge.get("type") and edge.get("emoji"):
+        return edge  # already enriched
+
+    src_level = node_level_map.get(edge["source"], 0)
+    tgt_level = node_level_map.get(edge["target"], src_level + 1)
+    tgt_type = node_type_map.get(edge["target"], "action")
+
+    style = EDGE_TYPE_OVERRIDES.get(
+        tgt_type,
+        EDGE_STYLES.get((src_level, tgt_level), DEFAULT_EDGE_STYLE),
+    )
+    return {
+        **edge,
+        "type":  style["type"],
+        "label": style["label"],
+        "emoji": style["emoji"],
+    }
 
 
 def build(structured_data: dict) -> dict:
@@ -8,8 +72,10 @@ def build(structured_data: dict) -> dict:
 
     Returns:
     {
-        "nodes": [{"id": str, "label": str, "type": str, "level": int}],
-        "edges": [{"source": str, "target": str}],
+        "nodes": [{"id": str, "label": str, "type": str, "level": int,
+                   "emoji": str, "color": str}],
+        "edges": [{"source": str, "target": str, "type": str,
+                   "label": str, "emoji": str}],
         "title": str
     }
     """
@@ -75,6 +141,12 @@ def build(structured_data: dict) -> dict:
                     )
                     edges.append({"source": action_id, "target": risk_id})
 
+    # Enrich nodes and edges with semantic metadata
+    nodes = [_enrich_node(n) for n in nodes]
+    node_level_map = {n["id"]: n["level"] for n in nodes}
+    node_type_map  = {n["id"]: n["type"]  for n in nodes}
+    edges = [_enrich_edge(e, node_level_map, node_type_map) for e in edges]
+
     return {"title": title, "nodes": nodes, "edges": edges}
 
 
@@ -82,7 +154,7 @@ def build_from_concept(concept_data: dict) -> dict:
     """
     Build a mind map from concept mode structured data.
 
-    Returns the same nodes/edges format.
+    Returns the same enriched nodes/edges format.
     """
     nodes = []
     edges = []
@@ -97,11 +169,10 @@ def build_from_concept(concept_data: dict) -> dict:
     if definition:
         def_id = "definition"
         nodes.append(
-            {"id": def_id, "label": "Definition", "type": "topic", "level": 1}
+            {"id": def_id, "label": "📖 Definition", "type": "topic", "level": 1}
         )
         edges.append({"source": root_id, "target": def_id})
         def_text_id = "def_text"
-        # Truncate for display
         short_def = definition[:60] + "..." if len(definition) > 60 else definition
         nodes.append(
             {"id": def_text_id, "label": short_def, "type": "component", "level": 2}
@@ -115,7 +186,7 @@ def build_from_concept(concept_data: dict) -> dict:
         nodes.append(
             {
                 "id": comp_parent_id,
-                "label": "Components",
+                "label": "📦 Components",
                 "type": "topic",
                 "level": 1,
             }
@@ -148,7 +219,7 @@ def build_from_concept(concept_data: dict) -> dict:
         nodes.append(
             {
                 "id": app_parent_id,
-                "label": "Applications",
+                "label": "🔧 Applications",
                 "type": "topic",
                 "level": 1,
             }
@@ -174,7 +245,7 @@ def build_from_concept(concept_data: dict) -> dict:
         nodes.append(
             {
                 "id": actions_parent_id,
-                "label": "Actions",
+                "label": "✅ Actions",
                 "type": "topic",
                 "level": 1,
             }
@@ -187,5 +258,11 @@ def build_from_concept(concept_data: dict) -> dict:
                 {"id": act_id, "label": action, "type": "action", "level": 2}
             )
             edges.append({"source": actions_parent_id, "target": act_id})
+
+    # Enrich nodes and edges with semantic metadata
+    nodes = [_enrich_node(n) for n in nodes]
+    node_level_map = {n["id"]: n["level"] for n in nodes}
+    node_type_map  = {n["id"]: n["type"]  for n in nodes}
+    edges = [_enrich_edge(e, node_level_map, node_type_map) for e in edges]
 
     return {"title": concept_name, "nodes": nodes, "edges": edges}

@@ -35,63 +35,232 @@ st.set_page_config(
 # ─── Helpers ────────────────────────────────────────────────────────────────
 
 def _render_mindmap_html(mindmap: dict) -> str:
-    """Render the mind map as an interactive HTML using PyVis."""
-    try:
-        from pyvis.network import Network
+    """Render the mind map as a consulting-grade interactive HTML using vis.js."""
+    import json as _json
 
-        node_colors = {
-            "root": "#FF6B35",
-            "topic": "#4ECDC4",
-            "component": "#45B7D1",
-            "action": "#96CEB4",
-            "risk": "#FF6B6B",
-            "metric": "#DDA0DD",
-        }
+    # ── Node visual config ─────────────────────────────────────────────────
+    NODE_CFG = {
+        "root":        {"emoji": "🧠", "bg": "#6D28D9", "border": "#4C1D95", "size": 38, "fs": 16, "shape": "box"},
+        "topic":       {"emoji": "🧭", "bg": "#1D4ED8", "border": "#1E3A8A", "size": 28, "fs": 13, "shape": "ellipse"},
+        "component":   {"emoji": "📊", "bg": "#0E7490", "border": "#164E63", "size": 20, "fs": 11, "shape": "ellipse"},
+        "action":      {"emoji": "🎯", "bg": "#15803D", "border": "#14532D", "size": 16, "fs": 10, "shape": "ellipse"},
+        "risk":        {"emoji": "⚠️",  "bg": "#B91C1C", "border": "#7F1D1D", "size": 16, "fs": 10, "shape": "ellipse"},
+        "metric":      {"emoji": "📈", "bg": "#7C3AED", "border": "#4C1D95", "size": 16, "fs": 10, "shape": "ellipse"},
+        "insight":     {"emoji": "💡", "bg": "#B45309", "border": "#78350F", "size": 16, "fs": 10, "shape": "ellipse"},
+        "opportunity": {"emoji": "🚀", "bg": "#047857", "border": "#064E3B", "size": 16, "fs": 10, "shape": "ellipse"},
+        "definition":  {"emoji": "📖", "bg": "#1D4ED8", "border": "#1E3A8A", "size": 26, "fs": 12, "shape": "ellipse"},
+        "applications":{"emoji": "🔧", "bg": "#0E7490", "border": "#164E63", "size": 26, "fs": 12, "shape": "ellipse"},
+        "components":  {"emoji": "📦", "bg": "#1D4ED8", "border": "#1E3A8A", "size": 26, "fs": 12, "shape": "ellipse"},
+        "actions":     {"emoji": "✅", "bg": "#15803D", "border": "#14532D", "size": 26, "fs": 12, "shape": "ellipse"},
+    }
+    DEFAULT_CFG = {"emoji": "🔹", "bg": "#334155", "border": "#1E293B", "size": 14, "fs": 10, "shape": "ellipse"}
 
-        net = Network(height="600px", width="100%", bgcolor="#1e1e2e", font_color="white")
-        net.set_options("""
-        {
-          "physics": {
-            "enabled": true,
-            "solver": "forceAtlas2Based",
-            "forceAtlas2Based": {
-              "gravitationalConstant": -50,
-              "centralGravity": 0.01,
-              "springLength": 120,
-              "springConstant": 0.08,
-              "damping": 0.4
+    # ── Edge visual config by (src_level, tgt_level) ───────────────────────
+    EDGE_CFG = {
+        (0, 1): {"color": "#818CF8", "width": 3, "dashes": False},
+        (1, 2): {"color": "#FCD34D", "width": 2, "dashes": False},
+        (2, 3): {"color": "#6EE7B7", "width": 1.5, "dashes": False},
+        (3, 4): {"color": "#94A3B8", "width": 1.5, "dashes": False},
+    }
+    DEFAULT_EDGE_CFG = {"color": "#475569", "width": 1, "dashes": False}
+
+    # Target node type → edge colour/dashes override
+    TTYPE_EDGE_OVERRIDE = {
+        "risk":        {"color": "#FCA5A5", "dashes": True},
+        "metric":      {"color": "#C4B5FD", "dashes": False},
+        "insight":     {"color": "#FDE68A", "dashes": False},
+        "opportunity": {"color": "#6EE7B7", "dashes": False},
+    }
+
+    node_level_map = {n["id"]: n.get("level", 0) for n in mindmap.get("nodes", [])}
+    node_type_map  = {n["id"]: n.get("type", "action") for n in mindmap.get("nodes", [])}
+
+    nodes_data = []
+    for node in mindmap.get("nodes", []):
+        ntype = node.get("type", "action")
+        cfg = NODE_CFG.get(ntype, DEFAULT_CFG)
+        emoji = node.get("emoji") or cfg["emoji"]
+        bg    = node.get("color") or cfg["bg"]
+        label = node.get("label", "")
+        display = (label[:24] + "\u2026") if len(label) > 24 else label
+        tooltip = (
+            "<b>" + emoji + " " + label + "</b>"
+            + "<br><span style='color:#94A3B8'>Type: " + ntype
+            + " | Level: " + str(node.get("level", 0)) + "</span>"
+        )
+        nodes_data.append({
+            "id": node["id"],
+            "label": emoji + "\n" + display,
+            "title": tooltip,
+            "color": {
+                "background": bg,
+                "border": cfg["border"],
+                "highlight": {"background": "#FCD34D", "border": "#F59E0B"},
+                "hover":     {"background": "#E2E8F0", "border": "#94A3B8"},
             },
-            "stabilization": {"iterations": 150}
-          },
-          "interaction": {"hover": true, "tooltipDelay": 100},
-          "nodes": {"font": {"size": 12}},
-          "edges": {"smooth": {"type": "dynamic"}}
-        }
-        """)
+            "font": {
+                "size": cfg["fs"], "color": "#F1F5F9",
+                "face": "Segoe UI, Arial, sans-serif",
+                "multi": True,
+            },
+            "size": cfg["size"],
+            "shape": cfg["shape"],
+            "borderWidth": 2,
+            "borderWidthSelected": 3,
+            "shadow": {"enabled": True, "color": "rgba(0,0,0,0.4)", "size": 8, "x": 2, "y": 2},
+            "margin": 8,
+        })
 
-        for node in mindmap.get("nodes", []):
-            color = node_colors.get(node.get("type", "action"), "#96CEB4")
-            size = max(10, 30 - node.get("level", 0) * 5)
-            net.add_node(
-                node["id"],
-                label=node["label"],
-                color=color,
-                size=size,
-                title=f"Type: {node.get('type', '')} | Level: {node.get('level', '')}",
-            )
+    edges_data = []
+    for edge in mindmap.get("edges", []):
+        src_id = edge["source"]
+        tgt_id = edge["target"]
+        src_level = node_level_map.get(src_id, 0)
+        tgt_level = node_level_map.get(tgt_id, src_level + 1)
+        tgt_type  = node_type_map.get(tgt_id, "action")
 
-        for edge in mindmap.get("edges", []):
-            net.add_edge(edge["source"], edge["target"], color="#555577")
+        ecfg = EDGE_CFG.get((src_level, tgt_level), DEFAULT_EDGE_CFG)
+        e_color  = ecfg["color"]
+        e_width  = ecfg["width"]
+        e_dashes = ecfg["dashes"]
 
-        # Write to temp file and read back
-        tmp_path = ROOT / "outputs" / "mindmaps" / "_current.html"
-        tmp_path.parent.mkdir(parents=True, exist_ok=True)
-        net.save_graph(str(tmp_path))
+        # Apply per-target-type colour/dash overrides
+        if tgt_type in TTYPE_EDGE_OVERRIDE:
+            override = TTYPE_EDGE_OVERRIDE[tgt_type]
+            e_color  = override["color"]
+            e_dashes = override["dashes"]
 
-        return tmp_path.read_text(encoding="utf-8")
+        # Use edge emoji/label if already enriched, else fall back to type emoji
+        e_emoji = edge.get("emoji", "")
+        e_label_text = edge.get("label", "")
+        e_display = (e_emoji + " " + e_label_text).strip() if e_emoji else e_label_text
 
-    except ImportError:
-        return "<p style='color:white'>PyVis not installed. Run: pip install pyvis</p>"
+        edges_data.append({
+            "from": src_id,
+            "to":   tgt_id,
+            "label": e_display,
+            "title": e_label_text or e_emoji or "",
+            "color": {
+                "color": e_color,
+                "highlight": "#FCD34D",
+                "hover": "#FCD34D",
+                "opacity": 0.9,
+            },
+            "width": e_width,
+            "dashes": e_dashes,
+            "arrows": {"to": {"enabled": True, "scaleFactor": 0.8, "type": "arrow"}},
+            "font": {"size": 9, "color": "#94A3B8", "strokeWidth": 0, "align": "middle"},
+            "smooth": {"enabled": True, "type": "curvedCW", "roundness": 0.1},
+        })
+
+    nodes_json = _json.dumps(nodes_data, ensure_ascii=False)
+    edges_json = _json.dumps(edges_data, ensure_ascii=False)
+    title      = mindmap.get("title", "Mind Map")
+    title_safe = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+    legend_items = [
+        ("#6D28D9", "🧠", "Root"),
+        ("#1D4ED8", "🧭", "Topic"),
+        ("#0E7490", "📊", "Component"),
+        ("#15803D", "🎯", "Action"),
+        ("#B91C1C", "⚠️",  "Risk"),
+        ("#7C3AED", "📈", "Metric"),
+        ("#B45309", "💡", "Insight"),
+        ("#047857", "🚀", "Opportunity"),
+    ]
+    legend_html = "".join(
+        "<div class='li'>"
+        "<span class='dot' style='background:" + c + "'></span>"
+        + em + " " + lbl + "</div>"
+        for c, em, lbl in legend_items
+    )
+
+    # Build the full HTML (uses string replacement to avoid f-string brace conflicts)
+    html = (
+        "<!DOCTYPE html>\n"
+        "<html lang='en'>\n"
+        "<head><meta charset='utf-8'>\n"
+        "<script src='https://cdn.jsdelivr.net/npm/vis-network@9.1.6/dist/vis-network.min.js'></script>\n"
+        "<link  href='https://cdn.jsdelivr.net/npm/vis-network@9.1.6/dist/vis-network.min.css' rel='stylesheet'>\n"
+        "<style>\n"
+        "  *{box-sizing:border-box;margin:0;padding:0}\n"
+        "  body{background:#0F172A;font-family:'Segoe UI',Arial,sans-serif;overflow:hidden}\n"
+        "  #net{width:100%;height:720px}\n"
+        "  #ctrl{position:absolute;top:10px;right:10px;z-index:100;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}\n"
+        "  #titlebar{position:absolute;top:10px;left:10px;z-index:100;color:#E2E8F0;font-size:13px;"
+        "font-weight:600;background:rgba(30,41,59,0.92);padding:6px 14px;border-radius:8px;"
+        "border:1px solid #334155;max-width:55%}\n"
+        "  .btn{background:rgba(30,41,59,0.92);color:#E2E8F0;border:1px solid #334155;"
+        "border-radius:8px;padding:6px 13px;font-size:12px;cursor:pointer;transition:all .2s}\n"
+        "  .btn:hover{background:#1E293B;border-color:#6366F1;color:#A5B4FC}\n"
+        "  #legend{position:absolute;bottom:10px;left:10px;z-index:100;"
+        "background:rgba(15,23,42,0.95);border:1px solid #334155;border-radius:10px;"
+        "padding:10px 14px;font-size:11px;color:#CBD5E1;min-width:140px}\n"
+        "  #legend h4{color:#94A3B8;margin-bottom:6px;font-size:10px;text-transform:uppercase;letter-spacing:1px}\n"
+        "  .li{display:flex;align-items:center;gap:6px;margin-bottom:3px}\n"
+        "  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0}\n"
+        "  body.pres #legend,body.pres #ctrl,body.pres #titlebar{display:none}\n"
+        "  body.pres #net{background:#000;height:100vh}\n"
+        "  body.pres{overflow:hidden}\n"
+        "</style></head>\n"
+        "<body>\n"
+        "<div id='titlebar'>🧠 __TITLE__</div>\n"
+        "<div id='ctrl'>\n"
+        "  <button class='btn' onclick='network.fit()'>⊡ Fit</button>\n"
+        "  <button class='btn' onclick='toggleDir()'>⇄ Direction</button>\n"
+        "  <button class='btn' id='pb' onclick='togglePres()'>🎬 Present</button>\n"
+        "  <button class='btn' onclick='toggleFS()'>⛶ Fullscreen</button>\n"
+        "</div>\n"
+        "<div id='legend'><h4>Legend</h4>__LEGEND__</div>\n"
+        "<div id='net'></div>\n"
+        "<script>\n"
+        "var nodesData=__NODES__;\n"
+        "var edgesData=__EDGES__;\n"
+        "var nodes=new vis.DataSet(nodesData);\n"
+        "var edges=new vis.DataSet(edgesData);\n"
+        "var container=document.getElementById('net');\n"
+        "var dir='LR';\n"
+        "var options={\n"
+        "  layout:{hierarchical:{\n"
+        "    enabled:true,direction:dir,sortMethod:'directed',\n"
+        "    nodeSpacing:160,levelSeparation:220,treeSpacing:200,\n"
+        "    blockShifting:true,edgeMinimization:true,parentCentralization:true\n"
+        "  }},\n"
+        "  physics:{enabled:false},\n"
+        "  interaction:{hover:true,tooltipDelay:80,zoomView:true,dragView:true,\n"
+        "               navigationButtons:false,keyboard:{enabled:true}},\n"
+        "  nodes:{borderWidth:2,borderWidthSelected:3},\n"
+        "  edges:{smooth:{type:'curvedCW',roundness:0.12},selectionWidth:3}\n"
+        "};\n"
+        "var network=new vis.Network(container,{nodes:nodes,edges:edges},options);\n"
+        "network.once('stabilized',function(){network.fit();});\n"
+        "function toggleDir(){\n"
+        "  dir=dir==='LR'?'UD':'LR';\n"
+        "  network.setOptions({layout:{hierarchical:{direction:dir}}});\n"
+        "  setTimeout(function(){network.fit();},400);\n"
+        "}\n"
+        "function togglePres(){\n"
+        "  document.body.classList.toggle('pres');\n"
+        "  var btn=document.getElementById('pb');\n"
+        "  btn.textContent=document.body.classList.contains('pres')?'✕ Exit':'🎬 Present';\n"
+        "  if(document.body.classList.contains('pres'))network.fit();\n"
+        "}\n"
+        "function toggleFS(){\n"
+        "  var el=document.documentElement;\n"
+        "  if(!document.fullscreenElement){\n"
+        "    el.requestFullscreen&&el.requestFullscreen();\n"
+        "  }else{\n"
+        "    document.exitFullscreen&&document.exitFullscreen();\n"
+        "  }\n"
+        "}\n"
+        "</script></body></html>"
+    )
+
+    html = html.replace("__TITLE__",  title_safe)
+    html = html.replace("__LEGEND__", legend_html)
+    html = html.replace("__NODES__",  nodes_json)
+    html = html.replace("__EDGES__",  edges_json)
+    return html
 
 
 def _export_json(data: dict, filename: str) -> bytes:
@@ -319,7 +488,7 @@ def _display_analysis_results():
     with tab1:
         st.subheader(f"Mind Map: {mindmap.get('title', '')}")
         html = _render_mindmap_html(mindmap)
-        st.components.v1.html(html, height=620, scrolling=False)
+        st.components.v1.html(html, height=750, scrolling=False)
 
         # Legend
         with st.expander("Legend"):
@@ -597,7 +766,7 @@ def render_concept_mode():
             with tab2:
                 st.subheader(f"Mind Map: {concept_mindmap.get('title', '')}")
                 html = _render_mindmap_html(concept_mindmap)
-                st.components.v1.html(html, height=600, scrolling=False)
+                st.components.v1.html(html, height=750, scrolling=False)
 
             with tab3:
                 st.download_button(
