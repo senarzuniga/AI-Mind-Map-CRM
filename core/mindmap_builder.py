@@ -36,7 +36,7 @@ EDGE_TYPE_OVERRIDES = {
 
 def _enrich_node(node: dict) -> dict:
     """Add emoji and color fields to a node dict based on its type."""
-    ntype = node.get("type", "action")
+    ntype = node.get("type", "component")
     style = NODE_STYLES.get(ntype, {"emoji": "🔹", "color": "#374151"})
     return {
         **node,

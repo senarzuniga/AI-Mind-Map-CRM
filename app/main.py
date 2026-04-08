@@ -185,7 +185,7 @@ def _render_mindmap_html(mindmap: dict) -> str:
         "<style>\n"
         "  *{box-sizing:border-box;margin:0;padding:0}\n"
         "  body{background:#0F172A;font-family:'Segoe UI',Arial,sans-serif;overflow:hidden}\n"
-        "  #net{width:100%;height:720px}\n"
+        "  #net{width:100%;height:740px}\n"
         "  #ctrl{position:absolute;top:10px;right:10px;z-index:100;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}\n"
         "  #titlebar{position:absolute;top:10px;left:10px;z-index:100;color:#E2E8F0;font-size:13px;"
         "font-weight:600;background:rgba(30,41,59,0.92);padding:6px 14px;border-radius:8px;"
