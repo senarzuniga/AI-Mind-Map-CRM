@@ -9,7 +9,7 @@ MAX_CLEAN_TEXT_LENGTH = 12_000
 TEXT_SUMMARY_LENGTH = 500
 
 
-def clean_text(text: str) -> str:
+def clean_text(text_input) -> str:
     """
     Clean and normalize input text for AI processing.
 
@@ -20,33 +20,38 @@ def clean_text(text: str) -> str:
     4. Remove excessive blank lines
     5. Truncate to max token-friendly length
     """
-    if not text or not text.strip():
-        return ""
+    def process_chunk(chunk):
+        if not chunk or not chunk.strip():
+            return ""
 
-    # Normalize unicode (e.g., convert special quotes to ASCII)
-    text = unicodedata.normalize("NFKD", text)
+        # Normalize unicode (e.g., convert special quotes to ASCII)
+        chunk = unicodedata.normalize("NFKD", chunk)
 
-    # Remove null bytes and non-printable control characters (keep newlines/tabs)
-    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
+        # Remove null bytes and non-printable control characters (keep newlines/tabs)
+        chunk = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", chunk)
 
-    # Collapse multiple spaces/tabs into a single space
-    text = re.sub(r"[ \t]+", " ", text)
+        # Collapse multiple spaces/tabs into a single space
+        chunk = re.sub(r"[ \t]+", " ", chunk)
 
-    # Collapse more than 2 consecutive newlines into 2
-    text = re.sub(r"\n{3,}", "\n\n", text)
+        # Collapse more than 2 consecutive newlines into 2
+        chunk = re.sub(r"\n{3,}", "\n\n", chunk)
 
-    # Strip leading/trailing whitespace from each line
-    lines = [line.strip() for line in text.splitlines()]
-    text = "\n".join(lines)
+        # Strip leading/trailing whitespace from each line
+        lines = [line.strip() for line in chunk.splitlines()]
+        chunk = "\n".join(lines)
 
-    # Final strip
-    text = text.strip()
+        # Final strip
+        return chunk.strip()
+
+    cleaned_text = ""
+    for chunk in text_input:
+        cleaned_text += process_chunk(chunk)
 
     # Truncate to ~12,000 characters to avoid token overflows
-    if len(text) > MAX_CLEAN_TEXT_LENGTH:
-        text = text[:MAX_CLEAN_TEXT_LENGTH] + "\n\n[Content truncated for processing...]"
+    if len(cleaned_text) > MAX_CLEAN_TEXT_LENGTH:
+        cleaned_text = cleaned_text[:MAX_CLEAN_TEXT_LENGTH] + "\n\n[Content truncated for processing...]"
 
-    return text
+    return cleaned_text
 
 
 def extract_keywords(text: str, max_keywords: int = 10) -> list:
