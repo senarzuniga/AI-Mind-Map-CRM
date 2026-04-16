@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+from unittest.mock import Mock
 
 from openai import OpenAI
 
@@ -14,7 +15,7 @@ def _load_prompt(filename: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def _get_client() -> OpenAI:
+def _get_client(mock_client=None) -> OpenAI:
     """Create and return an OpenAI client."""
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -22,16 +23,16 @@ def _get_client() -> OpenAI:
             "OPENAI_API_KEY environment variable is not set. "
             "Please set it in your .env file or environment."
         )
-    return OpenAI(api_key=api_key)
+    return mock_client or OpenAI(api_key=api_key)
 
 
-def _call_ai(prompt: str, model: str = "gpt-4o-mini") -> dict:
+def _call_ai(prompt: str, model: str = "gpt-4o-mini", mock_client=None) -> dict:
     """
     Call the OpenAI API and return parsed JSON.
 
     Raises ValueError if the response is not valid JSON.
     """
-    client = _get_client()
+    client = _get_client(mock_client)
 
     response = client.chat.completions.create(
         model=model,
@@ -54,7 +55,7 @@ def _call_ai(prompt: str, model: str = "gpt-4o-mini") -> dict:
         raise ValueError(f"AI returned invalid JSON: {e}") from e
 
 
-def structure(parsed_text: str) -> dict:
+def structure(parsed_text: str, mock_client=None) -> dict:
     """
     Transform parsed text into a structured hierarchical JSON mind map.
 
@@ -62,10 +63,10 @@ def structure(parsed_text: str) -> dict:
     """
     prompt_template = _load_prompt("structure.txt")
     prompt = prompt_template.replace("{input_text}", parsed_text)
-    return _call_ai(prompt)
+    return _call_ai(prompt, mock_client=mock_client)
 
 
-def build_concept(concept: str) -> dict:
+def build_concept(concept: str, mock_client=None) -> dict:
     """
     Build a structured explanation of a concept for Concept Mode.
 
@@ -73,10 +74,10 @@ def build_concept(concept: str) -> dict:
     """
     prompt_template = _load_prompt("concept_builder.txt")
     prompt = prompt_template.replace("{concept}", concept)
-    return _call_ai(prompt)
+    return _call_ai(prompt, mock_client=mock_client)
 
 
-def build_client_case(company_data: str) -> dict:
+def build_client_case(company_data: str, mock_client=None) -> dict:
     """
     Generate a consulting client case analysis.
 
@@ -84,16 +85,16 @@ def build_client_case(company_data: str) -> dict:
     """
     prompt_template = _load_prompt("client_case.txt")
     prompt = prompt_template.replace("{company_data}", company_data)
-    return _call_ai(prompt)
+    return _call_ai(prompt, mock_client=mock_client)
 
 
-def build_presentation(structured_data: dict, insights: dict, company_name: str = "") -> dict:
+def build_presentation(structured_data: dict, insights: dict, company_name: str = "", mock_client=None) -> dict:
     """
     Generate a presentation structure from analysis data.
 
     Returns a dict with title and slides array.
     """
-    client = _get_client()
+    client = _get_client(mock_client)
 
     data_summary = json.dumps(
         {"structured": structured_data, "insights": insights}, indent=2
