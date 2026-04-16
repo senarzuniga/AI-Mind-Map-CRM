@@ -16,15 +16,15 @@ def parse(input_data) -> str:
     Returns cleaned text string.
     """
     if isinstance(input_data, Path):
-        raw = input_data.read_text(encoding="utf-8", errors="replace")
+        with input_data.open('r', encoding='utf-8', errors='replace') as file:
+            return clean_text(file)
     elif isinstance(input_data, bytes):
         try:
             raw = input_data.decode("utf-8")
         except UnicodeDecodeError:
             raw = input_data.decode("latin-1")
+        return clean_text(raw)
     elif isinstance(input_data, str):
-        raw = input_data
+        return clean_text(input_data)
     else:
         raise TypeError(f"Unsupported input type: {type(input_data)}")
-
-    return clean_text(raw)
