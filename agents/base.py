@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+from unittest.mock import Mock
 
 from openai import OpenAI
 
@@ -15,7 +16,7 @@ DEFAULT_RESPONSE = {
 }
 
 
-def run_agent(prompt_file: str, structured_data: dict) -> dict:
+def run_agent(prompt_file: str, structured_data: dict, mock_client=None) -> dict:
     """
     Generic agent runner: loads a prompt template, injects structured data,
     calls the OpenAI API, and returns parsed JSON.
@@ -32,7 +33,7 @@ def run_agent(prompt_file: str, structured_data: dict) -> dict:
     data_str = json.dumps(structured_data, indent=2)[:3000]
     prompt = prompt_template.replace("{structured_data}", data_str)
 
-    client = OpenAI(api_key=api_key)
+    client = mock_client or OpenAI(api_key=api_key)
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
