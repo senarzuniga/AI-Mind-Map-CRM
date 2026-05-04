@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from openai import OpenAI
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 PROMPTS_DIR = Path(__file__).parent.parent / "models" / "prompts"
 
@@ -26,6 +27,7 @@ def _get_client(mock_client=None) -> OpenAI:
     return mock_client or OpenAI(api_key=api_key)
 
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
 def _call_ai(prompt: str, model: str = "gpt-4o-mini", mock_client=None) -> dict:
     """
     Call the OpenAI API and return parsed JSON.
