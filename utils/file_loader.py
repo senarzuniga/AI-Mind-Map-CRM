@@ -38,9 +38,8 @@ def _load_pdf(uploaded_file) -> str:
 
 def _load_text(uploaded_file) -> str:
     """Extract text from a TXT or Markdown file."""
-    raw = uploaded_file.read()
-    # Try UTF-8 first, fall back to latin-1
-    try:
-        return raw.decode("utf-8")
-    except UnicodeDecodeError:
-        return raw.decode("latin-1")
+    text_parts = []
+    with io.TextIOWrapper(uploaded_file, encoding='utf-8', errors='replace') as file:
+        for line in file:
+            text_parts.append(line)
+    return "".join(text_parts)
