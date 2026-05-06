@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from openai import OpenAI
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 PROMPTS_DIR = Path(__file__).parent.parent / "models" / "prompts"
 
@@ -16,6 +17,7 @@ DEFAULT_RESPONSE = {
 }
 
 
+@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
 def run_agent(prompt_file: str, structured_data: dict, mock_client=None) -> dict:
     """
     Generic agent runner: loads a prompt template, injects structured data,
